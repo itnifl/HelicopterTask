@@ -41,6 +41,30 @@ A helicopter game where you avoid getting shot by the gun at the bottom of the s
 
 - Graphics generated at [artlist.io](https://artlist.io)
 
+## Build Release
+
+To build a release package with the runnable JAR and source code:
+
+### Windows
+```bash
+.\build-release.bat
+```
+
+### Linux/Mac
+```bash
+chmod +x build-release.sh
+./build-release.sh
+```
+
+This creates a `dist/` folder containing:
+- `Helicopter-1.0.0.jar` - Runnable JAR file
+- `Helicopter-delivery.zip` - ZIP with source code and JAR
+
+To run the JAR:
+```bash
+java -jar dist/Helicopter-1.0.0.jar
+```
+
 ## Platforms
 
 - `core`: Main module with the application logic shared by all platforms.
