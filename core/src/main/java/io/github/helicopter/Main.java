@@ -264,7 +264,7 @@ public class Main extends ApplicationAdapter {
     }
 
     private boolean checkGunCollision() {
-        // Simple bounding box collision detection
+        // Calculate overlap between helicopter and gun
         float heliLeft = position.x;
         float heliRight = position.x + FRAME_WIDTH;
         float heliBottom = position.y;
@@ -275,8 +275,18 @@ public class Main extends ApplicationAdapter {
         float gunBottom = gunPosition.y;
         float gunTop = gunPosition.y + GUN_HEIGHT;
 
-        return heliRight > gunLeft && heliLeft < gunRight &&
-               heliTop > gunBottom && heliBottom < gunTop;
+        // Calculate overlap in each dimension
+        float overlapX = Math.max(0, Math.min(heliRight, gunRight) - Math.max(heliLeft, gunLeft));
+        float overlapY = Math.max(0, Math.min(heliTop, gunTop) - Math.max(heliBottom, gunBottom));
+
+        // Calculate overlap area
+        float overlapArea = overlapX * overlapY;
+
+        // Calculate helicopter area
+        float heliArea = FRAME_WIDTH * FRAME_HEIGHT;
+
+        // Require 10% of helicopter to overlap with gun
+        return overlapArea >= (heliArea * 0.1f);
     }
 
     private void triggerExplosion() {
