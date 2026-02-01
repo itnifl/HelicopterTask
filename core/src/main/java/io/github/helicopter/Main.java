@@ -69,6 +69,11 @@ public class Main extends ApplicationAdapter {
     private float nextFireTime = 0f;
     private float fireDisplayTimer = 0f;
 
+    // Bullet state (invisible projectile)
+    private boolean isBulletActive = false;
+    private float bulletY = 0f;
+    private static final float BULLET_SPEED = 800f; // Pixels per second
+
     // Physics
     private final Vector2 position = new Vector2();
     private final Vector2 velocity = new Vector2();
@@ -313,8 +318,44 @@ public class Main extends ApplicationAdapter {
                 isGunFiring = true;
                 gunFireTimer = 0f;
                 nextFireTime = getRandomFireInterval();
+
+                // Spawn invisible bullet
+                isBulletActive = true;
+                bulletY = GUN_HEIGHT; // Start from top of gun
             }
         }
+
+        // Update bullet position
+        if (isBulletActive) {
+            bulletY += BULLET_SPEED * deltaTime;
+
+            // Check if bullet is off screen
+            if (bulletY > Gdx.graphics.getHeight()) {
+                isBulletActive = false;
+            }
+
+            // Check if bullet hits helicopter (only if not already exploded)
+            if (!isExploded && checkBulletHitsHelicopter()) {
+                triggerExplosion();
+                isBulletActive = false;
+            }
+        }
+    }
+
+    private boolean checkBulletHitsHelicopter() {
+        // Bullet is a vertical line at the center of the gun
+        float bulletX = gunPosition.x + GUN_WIDTH / 2f;
+
+        // Check if bullet X is within helicopter bounds
+        float heliLeft = position.x;
+        float heliRight = position.x + FRAME_WIDTH;
+
+        // Check if bullet Y is within helicopter bounds
+        float heliBottom = position.y;
+        float heliTop = position.y + FRAME_HEIGHT;
+
+        return bulletX >= heliLeft && bulletX <= heliRight &&
+               bulletY >= heliBottom && bulletY <= heliTop;
     }
 
     private void moveTowardsTarget(float deltaTime) {
