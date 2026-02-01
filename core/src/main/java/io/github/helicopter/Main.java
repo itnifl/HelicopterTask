@@ -25,6 +25,7 @@ public class Main extends ApplicationAdapter {
     private static final String[] HELICOPTER_FRAME_PATHS = {
         "heli1.png", "heli2.png", "heli3.png", "heli4.png"
     };
+    private static final String GUN_TEXTURE_PATH = "1942gun-ready.png";
 
     // Animation configuration
     private static final float FRAME_DURATION = 0.1f; // 100ms per frame
@@ -45,9 +46,13 @@ public class Main extends ApplicationAdapter {
     // Rendering
     private SpriteBatch batch;
     private Texture[] helicopterTextures;
+    private Texture gunTexture;
     private Animation<TextureRegion> helicopterAnimation;
     private BitmapFont font;
     private float stateTime = 0f;
+
+    // Gun position
+    private final Vector2 gunPosition = new Vector2();
 
     // Physics
     private final Vector2 position = new Vector2();
@@ -59,6 +64,10 @@ public class Main extends ApplicationAdapter {
     private static final int FRAME_WIDTH = 130;
     private static final int FRAME_HEIGHT = 52;
 
+    // Gun dimensions
+    private static final int GUN_WIDTH = 50;
+    private static final int GUN_HEIGHT = 120;
+
     // Track direction for sprite facing
     private boolean facingLeft = false;
 
@@ -66,6 +75,7 @@ public class Main extends ApplicationAdapter {
     public void create() {
         initializeGraphics();
         initializeHelicopter();
+        initializeGun();
     }
 
     private void initializeGraphics() {
@@ -97,6 +107,15 @@ public class Main extends ApplicationAdapter {
         targetPosition.set(position);
     }
 
+    private void initializeGun() {
+        gunTexture = loadTextureWithTransparency(GUN_TEXTURE_PATH);
+
+        // Position gun at bottom middle of screen
+        float screenWidth = Gdx.graphics.getWidth();
+        gunPosition.x = (screenWidth - GUN_WIDTH) / 2f;
+        gunPosition.y = 0;
+    }
+
     /**
      * Loads a texture and replaces the magenta (255, 0, 255) color with transparent pixels.
      */
@@ -125,14 +144,6 @@ public class Main extends ApplicationAdapter {
         return texture;
     }
 
-    /**
-     * Checks if a pixel color is magenta (RGB: 254, 0, 254 or similar).
-     * Pixmap.getPixel() returns RGBA8888 format where:
-     * - Bits 24-31: Red
-     * - Bits 16-23: Green
-     * - Bits 8-15: Blue
-     * - Bits 0-7: Alpha
-     */
     private boolean isMagenta(int pixel) {
         // Extract RGBA components directly from the integer
         // Format is RRGGBBAA
@@ -140,8 +151,8 @@ public class Main extends ApplicationAdapter {
         int g = (pixel >>> 16) & 0xFF;
         int b = (pixel >>> 8) & 0xFF;
 
-        // Allow tolerance for magenta color variations (around 254, 0, 254)
-        return r >= 195 && g <= 49 && b >= 175;
+        // Allow tolerance for magenta color variations
+        return r >= 110 && g <= 65 && b >= 110;
     }
 
     private void centerHelicopterOnScreen() {
@@ -276,12 +287,19 @@ public class Main extends ApplicationAdapter {
 
     private void draw() {
         clearScreen();
+        renderGun();
         renderHelicopter();
         renderUI();
     }
 
     private void clearScreen() {
         ScreenUtils.clear(BACKGROUND_COLOR);
+    }
+
+    private void renderGun() {
+        batch.begin();
+        batch.draw(gunTexture, gunPosition.x, gunPosition.y, GUN_WIDTH, GUN_HEIGHT);
+        batch.end();
     }
 
     private void renderHelicopter() {
@@ -321,6 +339,9 @@ public class Main extends ApplicationAdapter {
                     texture.dispose();
                 }
             }
+        }
+        if (gunTexture != null) {
+            gunTexture.dispose();
         }
         if (font != null) {
             font.dispose();
