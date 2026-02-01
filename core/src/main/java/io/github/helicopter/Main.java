@@ -4,14 +4,17 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+import java.util.Locale;
+
 /**
  * Main game class that manages the helicopter sprite movement and rendering.
- * The helicopter bounces off screen edges and faces its direction of travel.
+ * The helicopter follows touch/mouse input and displays its position on screen.
  */
 public class Main extends ApplicationAdapter {
 
@@ -19,8 +22,11 @@ public class Main extends ApplicationAdapter {
     private static final String HELICOPTER_TEXTURE_PATH = "attackhelicopter.PNG";
 
     // Movement configuration
-    private static final float INITIAL_VELOCITY_X = 200f;
-    private static final float INITIAL_VELOCITY_Y = 150f;
+    private static final float MOVEMENT_SPEED = 300f;
+    private static final float ARRIVAL_THRESHOLD = 5f;
+
+    // UI configuration
+    private static final float TEXT_PADDING = 10f;
 
     // Background color
     private static final Color BACKGROUND_COLOR = new Color(0.15f, 0.15f, 0.2f, 1f);
@@ -29,10 +35,15 @@ public class Main extends ApplicationAdapter {
     private SpriteBatch batch;
     private Texture helicopterTexture;
     private Sprite helicopterSprite;
+    private BitmapFont font;
 
     // Physics
     private final Vector2 position = new Vector2();
-    private final Vector2 velocity = new Vector2();
+    private final Vector2 targetPosition = new Vector2();
+    private boolean isMoving = false;
+
+    // Track last horizontal direction for sprite facing
+    private boolean facingLeft = false;
 
     @Override
     public void create() {
@@ -42,6 +53,8 @@ public class Main extends ApplicationAdapter {
 
     private void initializeGraphics() {
         batch = new SpriteBatch();
+        font = new BitmapFont();
+        font.setColor(Color.WHITE);
     }
 
     private void initializeHelicopter() {
@@ -49,8 +62,8 @@ public class Main extends ApplicationAdapter {
         helicopterSprite = new Sprite(helicopterTexture);
         helicopterSprite.setOriginCenter();
 
-        velocity.set(INITIAL_VELOCITY_X, INITIAL_VELOCITY_Y);
         centerHelicopterOnScreen();
+        targetPosition.set(position);
     }
 
     private void centerHelicopterOnScreen() {
@@ -65,65 +78,83 @@ public class Main extends ApplicationAdapter {
     public void render() {
         float deltaTime = Gdx.graphics.getDeltaTime();
 
+        handleInput();
         update(deltaTime);
         draw();
     }
 
+    private void handleInput() {
+        if (Gdx.input.isTouched()) {
+            float touchX = Gdx.input.getX();
+            float touchY = Gdx.graphics.getHeight() - Gdx.input.getY(); // Convert to world coordinates
+
+            // Set target to center the sprite on touch position
+            targetPosition.x = touchX - helicopterSprite.getWidth() / 2f;
+            targetPosition.y = touchY - helicopterSprite.getHeight() / 2f;
+            isMoving = true;
+        }
+    }
+
     private void update(float deltaTime) {
-        updatePosition(deltaTime);
-        handleScreenBounce();
+        if (isMoving) {
+            moveTowardsTarget(deltaTime);
+        }
+        clampToScreen();
         updateSpriteState();
     }
 
-    private void updatePosition(float deltaTime) {
-        position.x += velocity.x * deltaTime;
-        position.y += velocity.y * deltaTime;
-    }
+    private void moveTowardsTarget(float deltaTime) {
+        float deltaX = targetPosition.x - position.x;
+        float deltaY = targetPosition.y - position.y;
+        float distance = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-    private void handleScreenBounce() {
-        handleHorizontalBounce();
-        handleVerticalBounce();
-    }
-
-    private void handleHorizontalBounce() {
-        float screenWidth = Gdx.graphics.getWidth();
-        float spriteWidth = helicopterSprite.getWidth();
-
-        if (position.x < 0) {
-            position.x = 0;
-            velocity.x = Math.abs(velocity.x);
-        } else if (position.x + spriteWidth > screenWidth) {
-            position.x = screenWidth - spriteWidth;
-            velocity.x = -Math.abs(velocity.x);
+        if (distance < ARRIVAL_THRESHOLD) {
+            position.set(targetPosition);
+            isMoving = false;
+            return;
         }
+
+        // Normalize and apply speed
+        float moveDistance = MOVEMENT_SPEED * deltaTime;
+        if (moveDistance > distance) {
+            moveDistance = distance;
+        }
+
+        float moveX = (deltaX / distance) * moveDistance;
+        float moveY = (deltaY / distance) * moveDistance;
+
+        // Update facing direction based on horizontal movement
+        if (Math.abs(deltaX) > ARRIVAL_THRESHOLD) {
+            facingLeft = deltaX > 0;
+        }
+
+        position.x += moveX;
+        position.y += moveY;
     }
 
-    private void handleVerticalBounce() {
+    private void clampToScreen() {
+        float screenWidth = Gdx.graphics.getWidth();
         float screenHeight = Gdx.graphics.getHeight();
+        float spriteWidth = helicopterSprite.getWidth();
         float spriteHeight = helicopterSprite.getHeight();
 
-        if (position.y < 0) {
-            position.y = 0;
-            velocity.y = Math.abs(velocity.y);
-        } else if (position.y + spriteHeight > screenHeight) {
-            position.y = screenHeight - spriteHeight;
-            velocity.y = -Math.abs(velocity.y);
-        }
+        position.x = Math.max(0, Math.min(position.x, screenWidth - spriteWidth));
+        position.y = Math.max(0, Math.min(position.y, screenHeight - spriteHeight));
+
+        // Also clamp target position to prevent helicopter from trying to go off-screen
+        targetPosition.x = Math.max(0, Math.min(targetPosition.x, screenWidth - spriteWidth));
+        targetPosition.y = Math.max(0, Math.min(targetPosition.y, screenHeight - spriteHeight));
     }
 
     private void updateSpriteState() {
         helicopterSprite.setPosition(position.x, position.y);
-        updateSpriteDirection();
-    }
-
-    private void updateSpriteDirection() {
-        boolean facingLeft = velocity.x < 0;
         helicopterSprite.setFlip(facingLeft, false);
     }
 
     private void draw() {
         clearScreen();
         renderSprites();
+        renderUI();
     }
 
     private void clearScreen() {
@@ -136,6 +167,15 @@ public class Main extends ApplicationAdapter {
         batch.end();
     }
 
+    private void renderUI() {
+        float screenHeight = Gdx.graphics.getHeight();
+        String positionText = String.format(Locale.US, "Position: (%.0f, %.0f)", position.x, position.y);
+
+        batch.begin();
+        font.draw(batch, positionText, TEXT_PADDING, screenHeight - TEXT_PADDING);
+        batch.end();
+    }
+
     @Override
     public void dispose() {
         if (batch != null) {
@@ -143,6 +183,9 @@ public class Main extends ApplicationAdapter {
         }
         if (helicopterTexture != null) {
             helicopterTexture.dispose();
+        }
+        if (font != null) {
+            font.dispose();
         }
     }
 }
