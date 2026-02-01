@@ -2,6 +2,7 @@ package io.github.helicopter;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -215,6 +216,12 @@ public class Main extends ApplicationAdapter {
     }
 
     private void handleInput() {
+        // Check for ESC key to restart game
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            restartGame();
+            return;
+        }
+
         if (Gdx.input.isTouched()) {
             float touchX = Gdx.input.getX();
             float touchY = Gdx.graphics.getHeight() - Gdx.input.getY(); // Convert to world coordinates
@@ -224,6 +231,39 @@ public class Main extends ApplicationAdapter {
             targetPosition.y = touchY - FRAME_HEIGHT / 2f;
             isUserControlling = true;
         }
+    }
+
+    private void restartGame() {
+        // Reset helicopter position
+        centerHelicopterOnScreen();
+        targetPosition.set(position);
+
+        // Reset velocity
+        velocity.set(INITIAL_VELOCITY_X, INITIAL_VELOCITY_Y);
+
+        // Reset explosion state
+        isExploded = false;
+        isFalling = false;
+        currentExplosionTexture = null;
+
+        // Reset user control
+        isUserControlling = false;
+
+        // Reset gun firing
+        gunFireTimer = 0f;
+        nextFireTime = getRandomFireInterval();
+        isGunFiring = false;
+        fireDisplayTimer = 0f;
+
+        // Reset bullet
+        isBulletActive = false;
+        bulletY = 0f;
+
+        // Reset animation time
+        stateTime = 0f;
+
+        // Reset facing direction
+        facingLeft = false;
     }
 
     private void update(float deltaTime) {
@@ -286,7 +326,7 @@ public class Main extends ApplicationAdapter {
         float heliArea = FRAME_WIDTH * FRAME_HEIGHT;
 
         // Require 10% of helicopter to overlap with gun
-        return overlapArea >= (heliArea * 0.1f);
+        return overlapArea >= (heliArea * 0.3f);
     }
 
     private void triggerExplosion() {
