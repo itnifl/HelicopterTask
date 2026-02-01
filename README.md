@@ -1,8 +1,10 @@
-# Helicopter
+# Helicopter & Pong Games
 
 A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
 
-A helicopter game where you avoid getting shot by the gun at the bottom of the screen.
+This project contains two games:
+1. **Helicopter Game** - Avoid the gun and its bullets
+2. **Pong** - Classic two-player (or vs AI) paddle game
 
 ## How to Run
 
@@ -21,21 +23,46 @@ A helicopter game where you avoid getting shot by the gun at the bottom of the s
 .\gradlew.bat :android:installDebug
 ```
 
-## Controls
+## Main Menu
+
+When the game starts, you'll see a menu with options:
+- **1. Helicopter Game** - Play the helicopter game
+- **2. Pong Game** - Play Pong
+- **3. Exit** - Quit the application
+
+Use **UP/DOWN** arrows to navigate and **ENTER** to select.
+
+## Helicopter Game Controls
 
 | Key/Action | Description |
 |------------|-------------|
-| **Mouse Click/Touch** | Click anywhere on the screen to move the helicopter towards that position |
-| **ESC** | Restart the game |
+| **Mouse Click/Touch** | Move helicopter towards click position |
+| **R** | Restart the game |
+| **ESC** | Return to main menu |
 
-## Gameplay
-
+### Helicopter Gameplay
 - The helicopter automatically bounces around the screen
 - Click/touch to guide the helicopter to a new position
-- Avoid the gun at the bottom of the screen, if you crash into it, you explode!
-- The gun fires periodically, if the bullet hits you, you explode!
+- Avoid the gun at the bottom - crash into it and you explode!
+- The gun fires periodically - if the bullet hits you, you explode!
 - When exploded, the helicopter falls to the ground
-- Press ESC to restart and try again
+
+## Pong Controls
+
+| Key/Action | Description |
+|------------|-------------|
+| **W/S** | Move left paddle up/down |
+| **UP/DOWN** | Move right paddle up/down (multiplayer only) |
+| **T** | Toggle single player / multiplayer mode |
+| **R** | Restart the game |
+| **ESC** | Return to main menu |
+
+### Pong Gameplay
+- Ball bounces off paddles and top/bottom walls
+- Score a point when the ball passes your opponent's paddle
+- Ball speed increases each time it hits a paddle
+- First to 21 points wins
+- In single player mode, AI controls the right paddle
 
 ## Credits
 
