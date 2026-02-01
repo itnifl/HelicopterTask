@@ -3,6 +3,7 @@ package io.github.helicopter;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -40,6 +41,7 @@ public class Main extends ApplicationAdapter {
     // Background color
     private static final Color BACKGROUND_COLOR = new Color(0.15f, 0.15f, 0.2f, 1f);
 
+
     // Rendering
     private SpriteBatch batch;
     private Texture[] helicopterTextures;
@@ -68,17 +70,18 @@ public class Main extends ApplicationAdapter {
 
     private void initializeGraphics() {
         batch = new SpriteBatch();
+        batch.enableBlending();
         font = new BitmapFont();
         font.setColor(Color.WHITE);
     }
 
     private void initializeHelicopter() {
-        // Load all frame textures
+        // Load all frame textures with magenta transparency
         helicopterTextures = new Texture[HELICOPTER_FRAME_PATHS.length];
         TextureRegion[] frames = new TextureRegion[HELICOPTER_FRAME_PATHS.length];
 
         for (int i = 0; i < HELICOPTER_FRAME_PATHS.length; i++) {
-            helicopterTextures[i] = new Texture(HELICOPTER_FRAME_PATHS[i]);
+            helicopterTextures[i] = loadTextureWithTransparency(HELICOPTER_FRAME_PATHS[i]);
             frames[i] = new TextureRegion(helicopterTextures[i]);
         }
 
@@ -92,6 +95,53 @@ public class Main extends ApplicationAdapter {
         // Center helicopter on screen
         centerHelicopterOnScreen();
         targetPosition.set(position);
+    }
+
+    /**
+     * Loads a texture and replaces the magenta (255, 0, 255) color with transparent pixels.
+     */
+    private Texture loadTextureWithTransparency(String path) {
+        Pixmap originalPixmap = new Pixmap(Gdx.files.internal(path));
+
+        // Always convert to RGBA8888 for consistent alpha handling
+        Pixmap pixmap = new Pixmap(originalPixmap.getWidth(), originalPixmap.getHeight(), Pixmap.Format.RGBA8888);
+        pixmap.setBlending(Pixmap.Blending.None);
+        pixmap.drawPixmap(originalPixmap, 0, 0);
+        originalPixmap.dispose();
+
+        // Replace magenta pixels with transparent
+        for (int y = 0; y < pixmap.getHeight(); y++) {
+            for (int x = 0; x < pixmap.getWidth(); x++) {
+                int pixel = pixmap.getPixel(x, y);
+
+                if (isMagenta(pixel)) {
+                    pixmap.drawPixel(x, y, 0x00000000); // Fully transparent
+                }
+            }
+        }
+
+        Texture texture = new Texture(pixmap);
+        pixmap.dispose();
+        return texture;
+    }
+
+    /**
+     * Checks if a pixel color is magenta (RGB: 254, 0, 254 or similar).
+     * Pixmap.getPixel() returns RGBA8888 format where:
+     * - Bits 24-31: Red
+     * - Bits 16-23: Green
+     * - Bits 8-15: Blue
+     * - Bits 0-7: Alpha
+     */
+    private boolean isMagenta(int pixel) {
+        // Extract RGBA components directly from the integer
+        // Format is RRGGBBAA
+        int r = (pixel >>> 24) & 0xFF;
+        int g = (pixel >>> 16) & 0xFF;
+        int b = (pixel >>> 8) & 0xFF;
+
+        // Allow tolerance for magenta color variations (around 254, 0, 254)
+        return r >= 195 && g <= 49 && b >= 175;
     }
 
     private void centerHelicopterOnScreen() {
