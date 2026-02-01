@@ -89,7 +89,7 @@ public class Main extends ApplicationAdapter {
     private static final float FIRE_DISPLAY_DURATION = 0.15f; // How long to show firing sprite
 
     // Explosion configuration
-    private static final float FALL_SPEED = 200f; // Pixels per second when falling
+    private static final float FALL_SPEED = 400f; // Pixels per second when falling
 
     // Track direction for sprite facing
     private boolean facingLeft = false;
