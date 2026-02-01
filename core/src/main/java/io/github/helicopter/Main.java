@@ -134,7 +134,6 @@ public class Main extends ApplicationAdapter {
         helicopterAnimation = new Animation<>(FRAME_DURATION, frames);
         helicopterAnimation.setPlayMode(Animation.PlayMode.LOOP);
 
-        // Initialize velocity
         velocity.set(INITIAL_VELOCITY_X, INITIAL_VELOCITY_Y);
 
         // Center helicopter on screen
@@ -151,7 +150,6 @@ public class Main extends ApplicationAdapter {
         gunPosition.x = (screenWidth - GUN_WIDTH) / 2f;
         gunPosition.y = 0;
 
-        // Set initial random fire time
         nextFireTime = getRandomFireInterval();
     }
 
@@ -159,9 +157,6 @@ public class Main extends ApplicationAdapter {
         return MIN_FIRE_INTERVAL + (float) Math.random() * (MAX_FIRE_INTERVAL - MIN_FIRE_INTERVAL);
     }
 
-    /**
-     * Loads a texture and replaces the magenta (255, 0, 255) color with transparent pixels.
-     */
     private Texture loadTextureWithTransparency(String path) {
         Pixmap originalPixmap = new Pixmap(Gdx.files.internal(path));
 
@@ -238,10 +233,8 @@ public class Main extends ApplicationAdapter {
         centerHelicopterOnScreen();
         targetPosition.set(position);
 
-        // Reset velocity
         velocity.set(INITIAL_VELOCITY_X, INITIAL_VELOCITY_Y);
 
-        // Reset explosion state
         isExploded = false;
         isFalling = false;
         currentExplosionTexture = null;
