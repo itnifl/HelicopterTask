@@ -25,7 +25,8 @@ public class Main extends ApplicationAdapter {
     private static final String[] HELICOPTER_FRAME_PATHS = {
         "heli1.png", "heli2.png", "heli3.png", "heli4.png"
     };
-    private static final String GUN_TEXTURE_PATH = "1942gun-ready.png";
+    private static final String GUN_READY_TEXTURE_PATH = "1942gun-ready.png";
+    private static final String GUN_FIRES_TEXTURE_PATH = "1942gun-fires.png";
 
     // Animation configuration
     private static final float FRAME_DURATION = 0.1f; // 100ms per frame
@@ -46,13 +47,18 @@ public class Main extends ApplicationAdapter {
     // Rendering
     private SpriteBatch batch;
     private Texture[] helicopterTextures;
-    private Texture gunTexture;
+    private Texture gunReadyTexture;
+    private Texture gunFiresTexture;
     private Animation<TextureRegion> helicopterAnimation;
     private BitmapFont font;
     private float stateTime = 0f;
 
-    // Gun position
+    // Gun position and firing state
     private final Vector2 gunPosition = new Vector2();
+    private boolean isGunFiring = false;
+    private float gunFireTimer = 0f;
+    private float nextFireTime = 0f;
+    private float fireDisplayTimer = 0f;
 
     // Physics
     private final Vector2 position = new Vector2();
@@ -67,6 +73,11 @@ public class Main extends ApplicationAdapter {
     // Gun dimensions
     private static final int GUN_WIDTH = 50;
     private static final int GUN_HEIGHT = 120;
+
+    // Gun firing configuration
+    private static final float MIN_FIRE_INTERVAL = 1.0f;  // Minimum time between shots
+    private static final float MAX_FIRE_INTERVAL = 3.0f;  // Maximum time between shots
+    private static final float FIRE_DISPLAY_DURATION = 0.15f; // How long to show firing sprite
 
     // Track direction for sprite facing
     private boolean facingLeft = false;
@@ -108,12 +119,20 @@ public class Main extends ApplicationAdapter {
     }
 
     private void initializeGun() {
-        gunTexture = loadTextureWithTransparency(GUN_TEXTURE_PATH);
+        gunReadyTexture = loadTextureWithTransparency(GUN_READY_TEXTURE_PATH);
+        gunFiresTexture = loadTextureWithTransparency(GUN_FIRES_TEXTURE_PATH);
 
         // Position gun at bottom middle of screen
         float screenWidth = Gdx.graphics.getWidth();
         gunPosition.x = (screenWidth - GUN_WIDTH) / 2f;
         gunPosition.y = 0;
+
+        // Set initial random fire time
+        nextFireTime = getRandomFireInterval();
+    }
+
+    private float getRandomFireInterval() {
+        return MIN_FIRE_INTERVAL + (float) Math.random() * (MAX_FIRE_INTERVAL - MIN_FIRE_INTERVAL);
     }
 
     /**
@@ -188,6 +207,9 @@ public class Main extends ApplicationAdapter {
         // Update animation time
         stateTime += deltaTime;
 
+        // Update gun firing
+        updateGunFiring(deltaTime);
+
         if (isUserControlling) {
             moveTowardsTarget(deltaTime);
         } else {
@@ -202,6 +224,26 @@ public class Main extends ApplicationAdapter {
 
         // Update facing direction based on velocity
         updateFacingDirection();
+    }
+
+    private void updateGunFiring(float deltaTime) {
+        gunFireTimer += deltaTime;
+
+        if (isGunFiring) {
+            // Currently showing fire sprite
+            fireDisplayTimer += deltaTime;
+            if (fireDisplayTimer >= FIRE_DISPLAY_DURATION) {
+                isGunFiring = false;
+                fireDisplayTimer = 0f;
+            }
+        } else {
+            // Check if it's time to fire
+            if (gunFireTimer >= nextFireTime) {
+                isGunFiring = true;
+                gunFireTimer = 0f;
+                nextFireTime = getRandomFireInterval();
+            }
+        }
     }
 
     private void moveTowardsTarget(float deltaTime) {
@@ -297,8 +339,9 @@ public class Main extends ApplicationAdapter {
     }
 
     private void renderGun() {
+        Texture currentGunTexture = isGunFiring ? gunFiresTexture : gunReadyTexture;
         batch.begin();
-        batch.draw(gunTexture, gunPosition.x, gunPosition.y, GUN_WIDTH, GUN_HEIGHT);
+        batch.draw(currentGunTexture, gunPosition.x, gunPosition.y, GUN_WIDTH, GUN_HEIGHT);
         batch.end();
     }
 
@@ -340,8 +383,11 @@ public class Main extends ApplicationAdapter {
                 }
             }
         }
-        if (gunTexture != null) {
-            gunTexture.dispose();
+        if (gunReadyTexture != null) {
+            gunReadyTexture.dispose();
+        }
+        if (gunFiresTexture != null) {
+            gunFiresTexture.dispose();
         }
         if (font != null) {
             font.dispose();
