@@ -25,6 +25,9 @@ public class Main extends ApplicationAdapter {
     private static final String[] HELICOPTER_FRAME_PATHS = {
         "heli1.png", "heli2.png", "heli3.png", "heli4.png"
     };
+    private static final String[] EXPLOSION_FRAME_PATHS = {
+        "attackhelicopter-exploding1.png", "attackhelicopter-exploding2.png"
+    };
     private static final String GUN_READY_TEXTURE_PATH = "1942gun-ready.png";
     private static final String GUN_FIRES_TEXTURE_PATH = "1942gun-fires.png";
 
@@ -47,11 +50,17 @@ public class Main extends ApplicationAdapter {
     // Rendering
     private SpriteBatch batch;
     private Texture[] helicopterTextures;
+    private Texture[] explosionTextures;
     private Texture gunReadyTexture;
     private Texture gunFiresTexture;
     private Animation<TextureRegion> helicopterAnimation;
     private BitmapFont font;
     private float stateTime = 0f;
+
+    // Explosion state
+    private boolean isExploded = false;
+    private boolean isFalling = false;
+    private Texture currentExplosionTexture;
 
     // Gun position and firing state
     private final Vector2 gunPosition = new Vector2();
@@ -79,6 +88,9 @@ public class Main extends ApplicationAdapter {
     private static final float MAX_FIRE_INTERVAL = 3.0f;  // Maximum time between shots
     private static final float FIRE_DISPLAY_DURATION = 0.15f; // How long to show firing sprite
 
+    // Explosion configuration
+    private static final float FALL_SPEED = 200f; // Pixels per second when falling
+
     // Track direction for sprite facing
     private boolean facingLeft = false;
 
@@ -104,6 +116,12 @@ public class Main extends ApplicationAdapter {
         for (int i = 0; i < HELICOPTER_FRAME_PATHS.length; i++) {
             helicopterTextures[i] = loadTextureWithTransparency(HELICOPTER_FRAME_PATHS[i]);
             frames[i] = new TextureRegion(helicopterTextures[i]);
+        }
+
+        // Load explosion textures
+        explosionTextures = new Texture[EXPLOSION_FRAME_PATHS.length];
+        for (int i = 0; i < EXPLOSION_FRAME_PATHS.length; i++) {
+            explosionTextures[i] = loadTextureWithTransparency(EXPLOSION_FRAME_PATHS[i]);
         }
 
         // Create looping animation
@@ -210,6 +228,20 @@ public class Main extends ApplicationAdapter {
         // Update gun firing
         updateGunFiring(deltaTime);
 
+        // If exploded, handle falling
+        if (isExploded) {
+            if (isFalling) {
+                updateFalling(deltaTime);
+            }
+            return; // Skip normal movement
+        }
+
+        // Check for collision with gun
+        if (checkGunCollision()) {
+            triggerExplosion();
+            return;
+        }
+
         if (isUserControlling) {
             moveTowardsTarget(deltaTime);
         } else {
@@ -224,6 +256,45 @@ public class Main extends ApplicationAdapter {
 
         // Update facing direction based on velocity
         updateFacingDirection();
+    }
+
+    private boolean checkGunCollision() {
+        // Simple bounding box collision detection
+        float heliLeft = position.x;
+        float heliRight = position.x + FRAME_WIDTH;
+        float heliBottom = position.y;
+        float heliTop = position.y + FRAME_HEIGHT;
+
+        float gunLeft = gunPosition.x;
+        float gunRight = gunPosition.x + GUN_WIDTH;
+        float gunBottom = gunPosition.y;
+        float gunTop = gunPosition.y + GUN_HEIGHT;
+
+        return heliRight > gunLeft && heliLeft < gunRight &&
+               heliTop > gunBottom && heliBottom < gunTop;
+    }
+
+    private void triggerExplosion() {
+        isExploded = true;
+        isFalling = true;
+
+        // Select random explosion texture
+        int randomIndex = (int) (Math.random() * explosionTextures.length);
+        currentExplosionTexture = explosionTextures[randomIndex];
+
+        // Stop all horizontal movement
+        velocity.x = 0;
+        velocity.y = 0;
+    }
+
+    private void updateFalling(float deltaTime) {
+        position.y -= FALL_SPEED * deltaTime;
+
+        // Stop falling when reaching bottom
+        if (position.y <= 0) {
+            position.y = 0;
+            isFalling = false;
+        }
     }
 
     private void updateGunFiring(float deltaTime) {
@@ -346,18 +417,23 @@ public class Main extends ApplicationAdapter {
     }
 
     private void renderHelicopter() {
-        // Get current animation frame
-        TextureRegion currentFrame = helicopterAnimation.getKeyFrame(stateTime);
-
         batch.begin();
 
-        // Flip the texture region if facing left, then draw normally
-        boolean isFlippedX = currentFrame.isFlipX();
-        if (facingLeft != isFlippedX) {
-            currentFrame.flip(true, false);
-        }
+        if (isExploded) {
+            // Draw explosion texture
+            batch.draw(currentExplosionTexture, position.x, position.y, FRAME_WIDTH, FRAME_HEIGHT);
+        } else {
+            // Get current animation frame
+            TextureRegion currentFrame = helicopterAnimation.getKeyFrame(stateTime);
 
-        batch.draw(currentFrame, position.x, position.y, FRAME_WIDTH, FRAME_HEIGHT);
+            // Flip the texture region if facing left, then draw normally
+            boolean isFlippedX = currentFrame.isFlipX();
+            if (facingLeft != isFlippedX) {
+                currentFrame.flip(true, false);
+            }
+
+            batch.draw(currentFrame, position.x, position.y, FRAME_WIDTH, FRAME_HEIGHT);
+        }
 
         batch.end();
     }
@@ -378,6 +454,13 @@ public class Main extends ApplicationAdapter {
         }
         if (helicopterTextures != null) {
             for (Texture texture : helicopterTextures) {
+                if (texture != null) {
+                    texture.dispose();
+                }
+            }
+        }
+        if (explosionTextures != null) {
+            for (Texture texture : explosionTextures) {
                 if (texture != null) {
                     texture.dispose();
                 }
