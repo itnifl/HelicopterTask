@@ -2,7 +2,44 @@
 
 A [libGDX](https://libgdx.com/) project generated with [gdx-liftoff](https://github.com/libgdx/gdx-liftoff).
 
-This project was generated with a template including simple application launchers and an `ApplicationAdapter` extension that draws libGDX logo.
+A helicopter game where you avoid getting shot by the gun at the bottom of the screen.
+
+## How to Run
+
+### Desktop (Windows)
+```bash
+.\gradlew.bat :lwjgl3:run
+```
+
+### Desktop (Linux/Mac)
+```bash
+./gradlew :lwjgl3:run
+```
+
+### Android
+```bash
+.\gradlew.bat :android:installDebug
+```
+
+## Controls
+
+| Key/Action | Description |
+|------------|-------------|
+| **Mouse Click/Touch** | Click anywhere on the screen to move the helicopter towards that position |
+| **ESC** | Restart the game |
+
+## Gameplay
+
+- The helicopter automatically bounces around the screen
+- Click/touch to guide the helicopter to a new position
+- Avoid the gun at the bottom of the screen, if you crash into it, you explode!
+- The gun fires periodically, if the bullet hits you, you explode!
+- When exploded, the helicopter falls to the ground
+- Press ESC to restart and try again
+
+## Credits
+
+- Graphics generated at [artlist.io](https://artlist.io)
 
 ## Platforms
 
